@@ -1,63 +1,54 @@
-import { Component } from 'react';
 import { nanoid } from 'nanoid';
 import ContactForm from 'components/ContactForm/ContactForm';
 import ContactsList from 'components/ContactsList/ContactsList';
 import Filter from 'components/Filter/Filter';
 import css from 'components/Phonebook/Phonebook.module.css';
-export default class Phonebook extends Component {
-  state = {
-    contacts: [],
-    filter: '',
+import { useState, useEffect } from 'react';
+
+export default function Phonebook() {
+  const [filter, setFilter] = useState('');
+  const [contacts, setContacts] = useState(() => {
+    const velue = JSON.parse(localStorage.getItem('contacts'));
+    return velue ?? [];
+  });
+  useEffect(() => {
+    localStorage.setItem('contacts', JSON.stringify(contacts));
+  }, [contacts]);
+  useEffect(() => {
+    return () => {
+      localStorage.removeItem('contacts');
+    };
+  }, []);
+
+  const hendelChenge = ev => {
+    const { value } = ev.target;
+    setFilter(value);
   };
-  componentDidUpdate(prevProps, prevState) {
-    if (this.state.contacts !== prevState.contacts) {
-      localStorage.setItem('contacts', JSON.stringify(this.state.contacts));
-    }
-  }
-  componentDidMount() {
-    const contactsLocal = localStorage.getItem('contacts');
-    const parsedContact = JSON.parse(contactsLocal);
-    if (parsedContact) {
-      this.setState({ contacts: parsedContact });
-    }
-  }
-  hendelChenge = ev => {
-    const { name, value } = ev.target;
-    this.setState({
-      [name]: value,
-    });
-  };
-  isDuplicate({ name }) {
-    const { contacts } = this.state;
+  const isDuplicate = ({ name }) => {
     const result = contacts.find(item => item.name === name);
     return result;
-  }
+  };
 
-  addContacts = contact => {
-    if (this.isDuplicate(contact)) {
+  const addContacts = contact => {
+    if (isDuplicate(contact)) {
       return alert(`${contact.name} is already in contacts`);
     }
-    this.setState(prev => {
+    setContacts(prev => {
       const newContact = {
         id: nanoid(),
         ...contact,
       };
-      return {
-        contacts: [...prev.contacts, newContact],
-      };
+      return [...prev, newContact];
     });
   };
-  removeContacts = id => {
-    this.setState(prev => {
-      const newContacts = prev.contacts.filter(item => item.id !== id);
-      return {
-        contacts: newContacts,
-      };
+  const removeContacts = id => {
+    setContacts(prev => {
+      const newContacts = prev.filter(contact => contact.id !== id);
+      return newContacts;
     });
   };
 
-  getFilteredContacts() {
-    const { contacts, filter } = this.state;
+  const getFilteredContacts = () => {
     if (!filter) {
       return contacts;
     }
@@ -69,23 +60,20 @@ export default class Phonebook extends Component {
       return result;
     });
     return filteredContacts;
-  }
-  render() {
-    const { addContacts, removeContacts, hendelChenge } = this;
+  };
 
-    const contacts = this.getFilteredContacts();
-    return (
-      <>
-        <div className={css.formContact}>
-          <h2 className={css.title}>Phonebook</h2>
-          <ContactForm onSubmit={addContacts} />
-        </div>
-        <div className={css.contacts}>
-          <h2 className={css.title}>Contacts</h2>
-          <Filter onChange={hendelChenge} value={this.state.filter} />
-          <ContactsList items={contacts} removeContacts={removeContacts} />
-        </div>
-      </>
-    );
-  }
+  const filterContacts = getFilteredContacts();
+  return (
+    <>
+      <div className={css.formContact}>
+        <h2 className={css.title}>Phonebook</h2>
+        <ContactForm onSubmit={addContacts} />
+      </div>
+      <div className={css.contacts}>
+        <h2 className={css.title}>Contacts</h2>
+        <Filter onChange={hendelChenge} value={filter} />
+        <ContactsList items={filterContacts} removeContacts={removeContacts} />
+      </div>
+    </>
+  );
 }
