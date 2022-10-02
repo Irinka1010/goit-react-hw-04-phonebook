@@ -14,11 +14,6 @@ export default function Phonebook() {
   useEffect(() => {
     localStorage.setItem('contacts', JSON.stringify(contacts));
   }, [contacts]);
-  useEffect(() => {
-    return () => {
-      localStorage.removeItem('contacts');
-    };
-  }, []);
 
   const hendelChenge = ev => {
     const { value } = ev.target;
